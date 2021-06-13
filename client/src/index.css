@@ -11,3 +11,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.form-control.is-invalid, .form-control:invalid {
+  background-position: right calc(.75em + .1875rem) center !important;
+}

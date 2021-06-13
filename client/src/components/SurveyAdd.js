@@ -1,0 +1,134 @@
+import { Form, Alert, Button } from "react-bootstrap";
+import { useState } from "react";
+//import { useHistory, useLocation} from 'react-router-dom';
+import QuestionBuilder from './QuestionBuilder.js';
+import { useHistory } from "react-router";
+
+function SurveyAdd(props) {
+    const [questions, setQuestions] = useState([]);
+    const [title, setTitle] = useState('');
+    const [mainError, setMainError] = useState('');
+    const history = useHistory()
+
+    const addQuestion = () => {
+        const q = {type: '', question: '', min: 0, max: 1, nAnswers: 1, answers:[''], err: {quest: '', type: '', answers: []}};
+        setQuestions([...questions, q]);
+    }
+
+    const editQuestions = (index, q) =>{
+        const t = [...questions];
+        let qq = {...q}
+        if(q.type === "open"){
+            qq.max = 1;
+            qq.nAnswers = 1;
+            qq.answers = [""];
+        }
+        if(q.max > q.nAnswers){
+            qq.max = q.nAnswers;
+        }
+        t[index] = qq;
+        setQuestions([...t]);
+    }
+
+    const moveQuestion = (index, step) => {
+        // non dovrebbe mai succedere ma non si sa mai
+        if(index+step < 0 || index+step > questions.length) return;
+
+        const t = [...questions];
+        const temp = t[index+step];
+        t[index+step] = t[index];
+        t[index] = temp;
+        setQuestions([...t]);
+    }
+
+    const removeQuestion = (index) =>{
+        let t = [...questions];
+        t.splice(index, 1);
+        setQuestions([...t]);
+    }
+
+    const handleCancel = (event) => {
+        event.preventDefault();
+        history.push("/");
+    };
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        setMainError('');
+
+        if(title === ''){
+            setMainError("Survey title cannot be empty!");
+            return;
+        }
+
+        if(questions.length === 0){
+            setMainError("You must add at least one question!");
+            return;
+        }
+
+        const newQs = [...questions];
+        let invalid = 0;
+        for(let i = 0; i < questions.length; i++){
+            const q = questions[i];
+            q.err = {quest: '', type: '', answers: {}};
+            if(q.question === '') {q.err.quest = "Please provide a question."; invalid++;}
+            if(q.type === '') {q.err.type = "Please select a type."; invalid++;}
+
+            if(q.type === 'close'){
+                for(let k = 0; k < q.answers.length; k++){
+                    if(q.answers[k] === '') {
+                        q.err.answers[k] = "Please provide an answer."; invalid++;
+                    }else if(q.answers.indexOf(q.answers[k]) !== q.answers.lastIndexOf(q.answers[k])){
+                        //evitiamo duplicati
+                        q.err.answers[k] = "Please remove duplicates."; invalid++;
+                    }
+                }
+            }
+            newQs[i] = q;
+        }
+
+        if(invalid){
+            const err = invalid > 1 ? `Please check your questions, there are ${invalid} issues.` : `Please check your questions, there is an issue.`;
+            setMainError(err);
+            setQuestions([...newQs]);
+            return;
+        }
+
+        if(mainError === ''){
+            const qs = questions.map((q) => {
+                const {err, ...ret} = q;
+                return ret;
+            });
+            const survey = {title: title, questions: qs, nAnswers: 0};
+            props.setSurveys([...props.surveys, survey]);
+            //console.log(JSON.stringify(survey));
+            history.push("/");
+        }
+    }
+
+    const surveyContent = questions.map((question, index) => (
+        <QuestionBuilder err={question.err} move={moveQuestion} first={index===0} last={(index===questions.length-1)} q={question} editQuestions={editQuestions} removeQuestion={removeQuestion} key={index} index={index}></QuestionBuilder>
+      )); 
+
+    return (
+        <>
+        <div className="text-center m-4">
+            <Form>
+                <Form.Group >
+                    <Form.Control placeholder = {'Survey title'}  value={title} onChange={ev => setTitle(ev.target.value)}></Form.Control>
+                </Form.Group>
+                <div className="justify-content-center text-center mb-4">
+                    {surveyContent}
+                </div>
+                <Button variant="dark" className="mx-1" onClick={() => addQuestion()}>Add a new question</Button>
+                <Button variant="dark" className="mx-1" onClick={(event) => handleSubmit(event)} type="submit">Publish</Button>
+                <Button variant="secondary" className="mx-1" onClick={(event) => handleCancel(event)} type="cancel">Cancel</Button>
+                {mainError ? <Alert variant='danger' onClose={() => setMainError('')} dismissible className="mt-4">{mainError}</Alert> : false}
+            </Form>
+        </div>
+        </>
+    )
+  }
+
+
+export default SurveyAdd;
