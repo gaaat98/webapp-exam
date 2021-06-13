@@ -1,5 +1,5 @@
-# Exam #1234: "Exam Title"
-## Student: s123456 LASTNAME FIRSTNAME 
+# Exam #1: "Questionario"
+## Student: ***REMOVED*** ***REMOVED*** ***REMOVED*** 
 
 ## React Client Application Routes
 
