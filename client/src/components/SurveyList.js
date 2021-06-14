@@ -64,7 +64,7 @@ function SurveyActions(props) {
                     <Button as={Link} variant="warning" to={{
                         pathname: "/view",
                         state: { survey: props.survey } //a differenza di /add questa setta uno stato
-                      }}>{iconEye}{` View ${props.survey.n_answers} Answers`}</Button>
+                      }}>{iconEye}{` View ${props.survey.nAnswers} Answers`}</Button>
                     :
                     <i>No one answered yet :(</i>
                 }

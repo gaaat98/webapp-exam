@@ -1,8 +1,11 @@
 import { Form, Alert, Button } from "react-bootstrap";
-import { useState } from "react";
-//import { useHistory, useLocation} from 'react-router-dom';
-import QuestionBuilder from './QuestionBuilder.js';
 import { useHistory } from "react-router";
+import { useState } from "react";
+
+import QuestionBuilder from './QuestionBuilder.js';
+
+import API from "../API/API.js"
+
 
 function SurveyAdd(props) {
     const [questions, setQuestions] = useState([]);
@@ -11,7 +14,7 @@ function SurveyAdd(props) {
     const history = useHistory()
 
     const addQuestion = () => {
-        const q = {type: '', question: '', min: 0, max: 1, nAnswers: 1, answers:[''], err: {quest: '', type: '', answers: []}};
+        const q = {type: '', question: '', min: 0, max: 1, nAnswers: 1, answers:[''], err: {quest: '', type: '', answers: {}}};
         setQuestions([...questions, q]);
     }
 
@@ -94,16 +97,22 @@ function SurveyAdd(props) {
             return;
         }
 
-        if(mainError === ''){
-            const qs = questions.map((q) => {
-                const {err, ...ret} = q;
-                return ret;
-            });
-            const survey = {title: title, questions: qs, nAnswers: 0};
-            props.setSurveys([...props.surveys, survey]);
-            //console.log(JSON.stringify(survey));
-            history.push("/");
-        }
+        const qs = questions.map((q) => {
+            const {err, ...ret} = q;
+            return ret;
+        });
+
+        // inizialmente ogni sondaggio ha nAnswers = 0, quindi lasciamo che se ne occupi il db settando 0 come valore di default
+        // similmente lo userId viene settato server-side a partire dal cookie session
+        const survey = {title: title, questions: qs};
+
+        addSurvey(survey);
+    }
+
+    const addSurvey = async(survey) => {
+        API.addSurvey(survey)
+        .then(() =>  {props.requestUpdate(); history.push("/");})
+        .catch(() => setMainError("Error contacting the server."));
     }
 
     const surveyContent = questions.map((question, index) => (

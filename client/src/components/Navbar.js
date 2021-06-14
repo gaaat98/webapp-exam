@@ -6,7 +6,7 @@ function MyNavbar(props) {
 
     return (
         <Navbar bg="dark" variant="dark" expand="sm" className="justify-content-between px-2">
-            <Navbar.Brand as={Link} to="/">
+            <Navbar.Brand as={Link} onClick={() => props.requestUpdate()} to="/">
                 {iconBrand}{' '}
                 SurveyMaster 5000
             </Navbar.Brand>

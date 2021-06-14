@@ -4,26 +4,85 @@ import { useState } from "react";
 
 import QuestionViewer from "./QuestionViewer.js"
 
+import API from "../API/API.js"
+
 function SurveyFill(props){
     const location = useLocation();
-    const survey = location.state.survey;
+    const survey = location.state ? location.state.survey : false;
     const [name, setName] = useState('');
     const [mainError, setMainError] = useState('');
     const history = useHistory();
     const [answers, setAnswers] = useState(survey ? Array(survey.questions.length).fill([]) : []);
     const [questionErrors, setQuestionErrors] = useState(survey ? Array(survey.questions.length).fill('') : []);
 
-    const handleSubmit = (event) => {};
-    const handleCancel = (event) => {
-        event.preventDefault();
-        history.push("/");
-    };
-
     if(location.state === undefined){
         return <Redirect to="/"/>
     }
 
-    console.log(survey);
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        setMainError('');
+
+        if(name === ''){
+            setMainError("Survey title cannot be empty!");
+            return;
+        }
+
+        let invalid = 0;
+        const tempErr = [...questionErrors];
+        for(let i = 0; i < survey.questions.length; i++){
+            const q = survey.questions[i];
+
+            if(answers[i].length < q.min){
+                invalid++;
+
+                // messaggio per domande aperte e radio btn
+                if(q.type === "open" || q.min === 1)
+                    tempErr[i] = 'This question is mandatory.';
+                else if (q.type === "close")
+                    tempErr[i] = `This question is mandatory. Check at least ${q.min} options.`;
+                continue;
+            }
+
+            if(answers[i].length > q.max){
+                // non dovrebbe mai succedere
+                invalid++;
+                tempErr[i] = 'Too many answers.';
+                continue;
+            }
+
+            if(q.type === "open" && answers[i][0] && answers[i][0].length > 200){
+                // non dovrebbe mai succedere perchè è gestito dal component
+                invalid++;
+                tempErr[i] = `Max 200 characters for text answer. You wrote ${answers[i][0].length}`;
+                continue;
+            }
+        }
+
+        if(invalid){
+            const err = invalid > 1 ? `Please check your answers, there are ${invalid} issues.` : `Please check your answer, there is an issue.`;
+            setMainError(err);
+            setQuestionErrors([...tempErr]);
+            return;
+        }
+
+        // survey.title verrà sostituito con survey.id
+        // l'API del backend si dovrà occupare di aggiornare il numero di risposte
+        const answerObj = {surveyId: survey.id, userName: name, answers: answers};
+        //non bisogna poi settare nulla, solo inviare all'api, le risposte verranno poi fetchate da SurveyView
+        addAnswer(answerObj);
+    };
+
+    const addAnswer = async(answer) => {
+        API.addAnswer(answer)
+        .then(() =>  {props.requestUpdate(); history.push("/");})
+        .catch((err) =>{console.log(err); setMainError("Error contacting the server.");});
+    }
+
+    const handleCancel = (event) => {
+        event.preventDefault();
+        history.push("/");
+    };
 
     const editAnswers = (index, a) =>{
         const t = [...answers];
@@ -34,8 +93,14 @@ function SurveyFill(props){
         setAnswers([...t]);
     }
 
+    const cleanError = (index) => {
+        const e = [...questionErrors];
+        e[index] = '';
+        setQuestionErrors([...e]);
+    }
+
     const surveyContent = survey.questions.map((question, index) =>(
-        <QuestionViewer err={questionErrors[index]} readOnly={false} editAnswers={editAnswers} givenAnswers={answers[index]} q={question} key={index} index={index}/>
+        <QuestionViewer cleanError={cleanError} err={questionErrors[index]} readOnly={false} editAnswers={editAnswers} givenAnswers={answers[index]} q={question} key={index} index={index}/>
     ));
 
     return <div className="text-center m-4">

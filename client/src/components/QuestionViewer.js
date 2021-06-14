@@ -3,39 +3,66 @@ import { Form, Toast, InputGroup } from "react-bootstrap";
 function QuestionViewer(props){
     let bodyContent = <></>;
     let headerInfo = '';
+
+
     switch(props.q.type){
         case "open":
             bodyContent = <>
             <InputGroup>
                 <InputGroup.Prepend>
-                    <InputGroup.Text><b><i>Your Answer:</i></b></InputGroup.Text>
+                    <InputGroup.Text className="font-weight-bold font-italic">{props.readOnly ? "Answer:" : "Your Answer:"}</InputGroup.Text>
                 </InputGroup.Prepend>
-                <Form.Control value={props.givenAnswers} isInvalid={props.err !== ''} readOnly={props.readOnly} maxLength={200} as="textarea" onChange={
-                    (event) => props.editAnswers(props.index, [event.target.value])
-                }/>
-                <Form.Control.Feedback type="invalid">{props.err}</Form.Control.Feedback>
+                {/*https://stackoverflow.com/questions/32232659/react-inline-conditionally-pass-prop-to-component*/}
+                <Form.Control 
+                    value={props.givenAnswers} 
+                    readOnly={props.readOnly} 
+                    maxLength={200} 
+                    as="textarea"
+                    isInvalid={props.readOnly ? undefined : (props.err !== '')} 
+                    onChange={props.readOnly ? undefined :
+                        (event) => {
+                            props.cleanError(props.index);
+                            props.editAnswers(props.index, [event.target.value])
+                        }
+                    }
+                />
+                {props.readOnly ? false : <Form.Control.Feedback type="invalid">{props.err}</Form.Control.Feedback>}
             </InputGroup>
             </>
             break;
 
         case "close":
                 let options;
+                const answerFeedback = props.readOnly ? false 
+                    :
+                    <>
+                        <Form.Control hidden isInvalid={props.err !== ''}/>
+                        <Form.Control.Feedback type="invalid">{props.err}</Form.Control.Feedback>
+                    </>
+
                 if(props.q.max > 1){
-                    headerInfo = ` (max. ${props.q.max} selections)`;
+                    headerInfo = ` (Selections: min. ${props.q.min}, max. ${props.q.max})`;
                     options = props.q.answers.map((answer, index) => (
                         <InputGroup key={index} className="m-1">
                         <InputGroup.Prepend>
-                            <InputGroup.Checkbox checked={props.givenAnswers.includes(answer)} value={answer} name={`q-${props.index}-ans`} onChange={
-                                (event) => {
-                                    const v = event.target.value;
-                                    let a = [...props.givenAnswers, v];
-                                    a = [...new Set(a)];
-                                    if(!event.target.checked){
-                                        a.splice(a.indexOf(v), 1);
+                            <InputGroup.Checkbox 
+                                checked={props.givenAnswers.includes(answer)} 
+                                disabled={props.readOnly} 
+                                value={answer} 
+                                name={`q-${props.index}-ans`} 
+                                onChange={props.readOnly ? undefined :
+                                    (event) => {
+                                        const v = event.target.value;
+                                        let a = [...props.givenAnswers, v];
+                                        a = [...new Set(a)];
+                                        if(!event.target.checked){
+                                            a.splice(a.indexOf(v), 1);
+                                        }
+                                        props.cleanError(props.index);
+                                        props.editAnswers(props.index, a);
                                     }
-                                    props.editAnswers(props.index, a);
                                 }
-                            }/>
+                            />
                         </InputGroup.Prepend>
                         <Form.Control value={answer} readOnly={true}/>
                         </InputGroup>
@@ -44,9 +71,24 @@ function QuestionViewer(props){
                     options = props.q.answers.map((answer, index) => (
                         <InputGroup className="m-1" key={index}>
                         <InputGroup.Prepend>
-                            <InputGroup.Radio checked={props.givenAnswers.includes(answer)} value={answer} name={`q-${props.index}-ans`} onChange={
-                                (event) => props.editAnswers(props.index, event.target.value)
-                            }/>
+                            <InputGroup.Radio 
+                                checked={props.givenAnswers.includes(answer)} 
+                                disabled={props.readOnly} 
+                                value={answer} 
+                                name={`q-${props.index}-ans`} 
+                                onChange={props.readOnly ? undefined :
+                                    (event) => {
+                                        props.cleanError(props.index);
+                                        props.editAnswers(props.index, [event.target.value]);
+                                    }
+                                }
+                                onDoubleClick={props.readOnly ? undefined :
+                                    (event) => {
+                                        if(event.target.checked)
+                                            props.editAnswers(props.index, []);
+                                    }
+                                }
+                            />
                         </InputGroup.Prepend>
                         <Form.Control value={answer} readOnly={true}/>
                         </InputGroup>
@@ -55,8 +97,7 @@ function QuestionViewer(props){
                 bodyContent = <>
                     <Form.Group className="m-1">
                         {options}
-                        <Form.Control hidden isInvalid={props.err !== ''}/>
-                        <Form.Control.Feedback type="invalid">{props.err}</Form.Control.Feedback>
+                        {answerFeedback}
                     </Form.Group>
                 </>
             break;
@@ -67,8 +108,11 @@ function QuestionViewer(props){
     }
     return (
         <Toast className="mw-100 bg-dark align-middle my-4">
-            <div className="toast-header">
-                <h5><strong><i>{props.q.question+headerInfo}</i></strong></h5>
+            <div className="toast-header justify-content-between">
+                <div className="text-break text-wrap h6">
+                    <strong>{props.q.question+headerInfo}</strong>
+                </div>
+                {props.q.min > 0 ? "Required" : false}
             </div>
             <Toast.Body>
                 {bodyContent}
