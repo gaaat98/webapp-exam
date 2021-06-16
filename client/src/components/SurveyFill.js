@@ -23,8 +23,9 @@ function SurveyFill(props){
         event.preventDefault();
         setMainError('');
 
-        if(name === ''){
-            setMainError("Survey title cannot be empty!");
+        // empty string or whitespaces only
+        if(name.trim().length === 0){
+            setMainError("Your name cannot be empty!");
             return;
         }
 
@@ -57,6 +58,13 @@ function SurveyFill(props){
                 tempErr[i] = `Max 200 characters for text answer. You wrote ${answers[i][0].length}`;
                 continue;
             }
+
+            if(q.type === "open" && answers[i][0] && answers[i][0].trim().length === 0){
+                // non dovrebbe mai succedere perchè è gestito dal component
+                invalid++;
+                tempErr[i] = `Whitespaces only open answer is not valid.`;
+                continue;
+            }
         }
 
         if(invalid){
@@ -76,11 +84,11 @@ function SurveyFill(props){
     const addAnswer = async(answer) => {
         API.addAnswer(answer)
         .then(() =>  {props.requestUpdate(); history.push("/");})
-        .catch((err) =>{console.log(err); setMainError("Error contacting the server.");});
+        .catch((err) => setMainError("Error contacting the server.") );
     }
 
-    const handleCancel = (event) => {
-        event.preventDefault();
+    const handleCancel = () => {
+        props.requestUpdate();
         history.push("/");
     };
 
@@ -114,7 +122,7 @@ function SurveyFill(props){
                     {surveyContent}
                 </div>
                 <Button variant="dark" className="mx-1" onClick={(event) => handleSubmit(event)} type="submit">Submit</Button>
-                <Button variant="secondary" className="mx-1" onClick={(event) => handleCancel(event)} type="cancel">Cancel</Button>
+                <Button variant="secondary" className="mx-1" onClick={() => handleCancel()}>Cancel</Button>
                 {mainError ? <Alert variant='danger' onClose={() => setMainError('')} dismissible className="mt-4">{mainError}</Alert> : false}
             </Form>
         </div>

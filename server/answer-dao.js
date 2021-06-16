@@ -1,5 +1,5 @@
 'use strict';
-/* Data Access Object (DAO) module for accessing tasks */
+/* Data Access Object (DAO) module for accessing Surveys */
 
 const db = require('./db');
 

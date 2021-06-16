@@ -11,7 +11,7 @@ function SurveyAdd(props) {
     const [questions, setQuestions] = useState([]);
     const [title, setTitle] = useState('');
     const [mainError, setMainError] = useState('');
-    const history = useHistory()
+    const history = useHistory();
 
     const addQuestion = () => {
         const q = {type: '', question: '', min: 0, max: 1, nAnswers: 1, answers:[''], err: {quest: '', type: '', answers: {}}};
@@ -50,8 +50,8 @@ function SurveyAdd(props) {
         setQuestions([...t]);
     }
 
-    const handleCancel = (event) => {
-        event.preventDefault();
+    const handleCancel = () => {
+        props.requestUpdate();
         history.push("/");
     };
 
@@ -59,7 +59,7 @@ function SurveyAdd(props) {
         event.preventDefault();
         setMainError('');
 
-        if(title === ''){
+        if(title.trim().length === 0){
             setMainError("Survey title cannot be empty!");
             return;
         }
@@ -74,12 +74,12 @@ function SurveyAdd(props) {
         for(let i = 0; i < questions.length; i++){
             const q = questions[i];
             q.err = {quest: '', type: '', answers: {}};
-            if(q.question === '') {q.err.quest = "Please provide a question."; invalid++;}
-            if(q.type === '') {q.err.type = "Please select a type."; invalid++;}
+            if(q.question.trim().length === 0) {q.err.quest = "Please provide a question."; invalid++;}
+            if(q.type.trim().length === 0) {q.err.type = "Please select a type."; invalid++;}
 
             if(q.type === 'close'){
                 for(let k = 0; k < q.answers.length; k++){
-                    if(q.answers[k] === '') {
+                    if(q.answers[k].trim().length === 0) {
                         q.err.answers[k] = "Please provide an answer."; invalid++;
                     }else if(q.answers.indexOf(q.answers[k]) !== q.answers.lastIndexOf(q.answers[k])){
                         //evitiamo duplicati
@@ -131,7 +131,7 @@ function SurveyAdd(props) {
                 </div>
                 <Button variant="dark" className="mx-1" onClick={() => addQuestion()}>Add a new question</Button>
                 <Button variant="dark" className="mx-1" onClick={(event) => handleSubmit(event)} type="submit">Publish</Button>
-                <Button variant="secondary" className="mx-1" onClick={(event) => handleCancel(event)} type="cancel">Cancel</Button>
+                <Button variant="secondary" className="mx-1" onClick={() => handleCancel()}>Cancel</Button>
                 {mainError ? <Alert variant='danger' onClose={() => setMainError('')} dismissible className="mt-4">{mainError}</Alert> : false}
             </Form>
         </div>

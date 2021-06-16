@@ -2,7 +2,7 @@
 
 const express = require('express');
 const morgan = require('morgan'); // logging middleware
-const { query, validationResult, check, body } = require('express-validator'); // validation middleware
+const { validationResult, check, body } = require('express-validator'); // validation middleware
 
 const passport = require('passport'); // auth middleware
 const LocalStrategy = require('passport-local').Strategy; // username and password for login
@@ -55,7 +55,7 @@ const isLoggedIn = (req, res, next) => {
     
     return res.status(401).json({ error: 'not authenticated'});
   }
-  
+
   // set up the session
   app.use(session({
     // by default, Passport uses a MemoryStore to keep track of the sessions
@@ -73,11 +73,12 @@ const isLoggedIn = (req, res, next) => {
 /*
 retrieve:
     GET /api/surveys
+    GET /api/surveys/:id/
     GET /api/surveys/:id/answers
 
 create:
     POST /api/surveys
-    POST /api/surveys/:id/answers
+    POST /api/answers
 */
 
 // POST /sessions 
@@ -131,7 +132,7 @@ app.get('/api/surveys',
                 res.status(200).json(surveys);
             }
         } catch (err) {
-            res.status(500).json({ 'error': err });
+            res.status(500).json({ error: err });
         }
     });
 
@@ -149,7 +150,7 @@ app.get('/api/surveys/:id', [
         const survey = await surveyDao.getSurvey(req.params.id);
         res.status(200).json(survey);
     } catch (err) {
-        res.status(500).json({ 'error': err });
+        res.status(500).json({ error: err });
     }
 });
 
@@ -166,26 +167,199 @@ app.get('/api/surveys/:id/answers', [
         const answers = await answerDao.getAnswers(req.params.id);
         res.status(200).json(answers);
     } catch (err) {
-        res.status(500).json({ 'error': err });
+        res.status(500).json({ error: err });
     }
 });
 
-/*
-example of POST /api/tasks (p.s. setup content-type: application/json)
-{"private":1,
-"taskName":"prova2",
-"date":"2021-05-21",
-"completed":0,
-"user":1 ,
-"important":1}
+const validateQuestions = (req, res, next) => {
+  const questions = JSON.parse(req.body.questions);
 
-body('taskName', 'taskName length must be 1-200 chars').isLength({ min: 1, max: 200 }),
-    body('private', 'private is a boolean attribute').isBoolean(),
-    body('date', 'date must be a valid date').isDate(),
-    body('completed', 'completed is a boolean attributes').isBoolean(),
-    body('important', 'important is a boolean attribute').isBoolean()
-*/
-app.post('/api/answers', [], async (req, res) => {
+  if(questions.length === 0)
+      return res.status(422).json({ error: `Survey must contain at least one question.`});
+
+  let invalid = 0;
+  for(let i = 0; i < questions.length; i++){
+    const q = questions[i];
+
+    if(q === undefined){
+      console.log("q undef");
+      invalid++;
+      continue;
+    }
+
+    if(q.question === undefined || q.type === undefined || q.min === undefined || q.max === undefined || q.nAnswers === undefined || q.answers === undefined){
+      console.log("props undef");
+      invalid++;
+      continue;
+    }
+
+    if(q.min < 0 || q.max < 1 || q.nAnswers < 1){
+      console.log("ranges too small");
+      invalid++;
+      continue;
+    }
+
+    if(q.min > q.max || q.max > q.nAnswers || q.nAnswers > 10){
+      console.log("ranges too big");
+      invalid++;
+      continue;
+    }
+
+    if(q.type.trim().length === 0){
+      console.log("type too short");
+      invalid++;
+      continue;
+    }
+
+    switch(q.type){
+      case "open":
+        if(q.question.trim().length === 0){
+          console.log("q too short");
+          invalid++;
+          continue
+        }
+
+        if(q.max !== q.nAnswers && q.nAnswers !== 1){
+          console.log("open must have max = nans");
+          invalid++;
+          continue
+        }
+
+        break;
+
+      case "close":
+        if(q.answers.length < q.min || q.answers.length > q.nAnswers){
+          console.log("close must have ranges correct");
+          invalid++;
+          continue;
+        }
+
+        if(q.answers.length != q.nAnswers){
+          console.log("open must have max = nans");
+          invalid++;
+          continue;
+        }
+
+        if(!q.answers.every((opt) => opt.trim().length > 0)){
+          console.log("opts too short");
+          invalid++;
+          continue;
+        }
+
+        if(!q.answers.every((opt) => q.answers.indexOf(opt) === q.answers.lastIndexOf(opt))){
+          console.log("opts duplicate");
+          invalid++;
+          continue;
+        }
+        break;
+      
+      default:
+        invalid++;
+        break;
+    }
+  }
+
+  if(invalid > 0){
+    return res.status(422).json({ error: `Found ${invalid} invalid answers.`});
+  }
+
+
+  return next();
+}
+
+
+app.post('/api/surveys', [
+  body('title', 'Title must not be empty/whitespaces only.').not().isEmpty({ ignore_whitespace:true }),
+  body('questions', 'Questions must be provided.').not().isEmpty({ ignore_whitespace:true }),
+], [isLoggedIn, validateQuestions], async (req, res) => {
+  try {
+      // input sanitization
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+          return res.status(422).json({ errors: errors.array() })
+      }
+
+      const survey = {
+          admin: req.user.id,
+          title: req.body.title,
+          questions: req.body.questions
+      }
+
+      const surveyId = await surveyDao.addSurvey(survey);
+      res.status(200).json({ msg: `Added survey with id: ${surveyId}.` });
+  } catch (err) {
+      res.status(500).json({ error: err });
+  }
+});
+
+const validateAnswer = async (req, res, next) => {
+  const survey = await surveyDao.getSurvey(req.body.surveyId);
+  if(survey.id === undefined)
+    return res.status(404).json({ error: `Survey ${req.body.surveyId} not found.`});
+
+  const questions = survey.questions;
+  const answers = JSON.parse(req.body.answers);
+
+  let invalid = 0;
+  for(let i = 0; i < questions.length; i++){
+    const q = questions[i];
+    const a = answers[i];
+
+    if(a === undefined){
+      invalid++;
+      continue;
+    }
+
+    switch(q.type){
+      case "open":
+        if(a.length === 0 && q.min < 1){
+          continue;
+        }else if (a.length === 0){
+          invalid++;
+          continue;
+        }
+
+        if(a[0] === "" && q.min > 0){
+          invalid++;
+          continue;
+        }
+
+        if(a[0].length > 200){
+          invalid++;
+          continue;
+        }
+        break;
+
+      case "close":
+        if(a.length < q.min || a.length > q.max){
+          invalid++;
+          continue;
+        }
+
+        if(!a.every((opt) => q.answers.includes(opt))){
+          invalid++;
+          continue;
+        }
+        break;
+      
+      default:
+        break;
+    }
+  }
+
+  if(invalid > 0){
+    return res.status(422).json({ error: `Found ${invalid} invalid answers.`});
+  }
+
+
+  return next();
+}
+
+app.post('/api/answers', [
+  body('userName', 'Username must not be empty/whitespaces only.').not().isEmpty({ ignore_whitespace:true }),
+  body('answers', 'Answers must be provided.').not().isEmpty({ ignore_whitespace:true }),
+  body('surveyId', 'SurveyId must be an integer.').isInt(),
+], validateAnswer, async (req, res) => {
     try {
         // input sanitization
         const errors = validationResult(req);
@@ -200,31 +374,34 @@ app.post('/api/answers', [], async (req, res) => {
         }
 
         const answerId = await answerDao.addAnswer(answer);
-        res.status(200).json({ 'msg': `Added answer with id: ${answerId}.` });
+        res.status(200).json({ msg: `Added answer with id: ${answerId}.` });
     } catch (err) {
-        res.status(500).json({ 'error': err });
+        res.status(500).json({ error: err });
     }
 });
 
-app.post('/api/surveys', [], isLoggedIn, async (req, res) => {
-    try {
-        // input sanitization
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(422).json({ errors: errors.array() })
-        }
 
-        const survey = {
-            admin: req.user.id,
-            title: req.body.title,
-            questions: req.body.questions
-        }
+// non richiesta ma comoda per il debug
+app.delete('/api/surveys/:id', [
+  check('id', 'id must be an integer').isInt()
+], isLoggedIn, async (req, res) => {
+  try {
+      // input sanitization
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+          return res.status(422).json({ errors: errors.array() })
+      }
 
-        const surveyId = await surveyDao.addSurvey(survey);
-        res.status(200).json({ 'msg': `Added survey with id: ${surveyId}.` });
-    } catch (err) {
-        res.status(500).json({ 'error': err });
-    }
+      const surveyDeleted = await surveyDao.deleteSurvey(req.params.id, req.user.id);
+      console.log("got surveydeleted", surveyDeleted);
+      if (surveyDeleted)
+          res.status(200).json({ msg: `Deleted survey with id: ${req.params.id}.` });
+      else
+          res.status(404).json({ err: `User ${req.user.id} has no survey with id: ${req.params.id}.`});
+  } catch (err) {
+      console.log(err);
+      res.status(500).json({err: err});
+  }
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}/`));

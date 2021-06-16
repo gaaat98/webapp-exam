@@ -1,5 +1,5 @@
 'use strict';
-/* Data Access Object (DAO) module for accessing tasks */
+/* Data Access Object (DAO) module for accessing Surveys */
 
 const db = require('./db');
 
@@ -22,7 +22,7 @@ exports.getSurveys = (userId) => {
     });
 };
 
-// get the task identified by {id}
+// get the Survey identified by {id}
 exports.getSurvey = (surveyId) => {
     return new Promise((resolve, reject) => {
         const sql = 'SELECT * FROM surveys WHERE id=?';
@@ -63,3 +63,18 @@ exports.addSurvey = (survey) => {
         });
     });
 };
+
+// delete an existing survey of the user
+// non è necessario eliminare anche le risposte perchè se ne occupano le regole del db
+exports.deleteSurvey = (id, userId) => {
+    return new Promise((resolve, reject) => {
+        const sql = 'DELETE FROM surveys WHERE id = ? AND admin = ?';
+        db.run(sql, [id, userId], function (err) {
+            if (err) {
+                reject(err);
+                return;
+            } else
+                resolve(this.changes); // return num of rows affected by the query
+        });
+    });
+}

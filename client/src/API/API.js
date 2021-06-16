@@ -1,72 +1,5 @@
 const BASEURL = '/api';
 
-/*
-async function getAllTasks() {
-  // call: GET /api/tasks
-  const response = await fetch('/api/tasks');
-  const parseData = await response.json();
-  const taskArray = [];
-
-  for (const t of parseData) {
-    const tsk = { ...t, date: dayjs(t["date"]) };
-    taskArray.push(tsk);
-  }
-
-  if (response.ok) {
-    return taskArray;
-  } else {
-    throw taskArray;  // An object with the error coming from the server
-  }
-}
-*/
-/*{"private":1,
-"taskName":"prova2",
-"date":"2021-05-21",
-"completed":0,
-"user":1 ,
-"important":1} */
-
-
-/*
-function deleteTask(task) {
-  return new Promise((resolve, reject) => {
-    fetch('/api/tasks/' + task.id, {
-      method: 'DELETE',
-    }).then((response) => {
-      if (response.ok) {
-        resolve(null);
-      } else {
-        // analyze the cause of error
-        response.json()
-          .then((obj) => { reject(obj); }) // error msg in the response body
-          .catch((err) => { reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
-      }
-    }).catch((err) => { reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
-  });
-}
-
-async function updateTask(task) {
-  return new Promise((resolve, reject) => {
-    fetch('/api/tasks/' + task.id, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(task)
-    }).then((response) => {
-      if (response.ok) {
-        resolve(null);
-      } else {
-        // analyze the cause of error
-        response.json()
-          .then((obj) => { reject(obj); }) // error msg in the response body
-          .catch((err) => { reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
-      }
-    }).catch((err) => { reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
-  });
-}
-
-*/
 async function logIn(credentials) {
     let response = await fetch('/api/sessions', {
         method: 'POST',
@@ -136,7 +69,6 @@ async function getAnswers(surveyId) {
 }
 
 function addSurvey(survey) {
-    // call: POST /api/tasks
     return new Promise((resolve, reject) => {
         fetch('api/surveys', {
             method: 'POST',
@@ -158,7 +90,6 @@ function addSurvey(survey) {
 }
 
 function addAnswer(answer) {
-    // call: POST /api/tasks
     return new Promise((resolve, reject) => {
         fetch('api/answers', {
             method: 'POST',
@@ -179,5 +110,22 @@ function addAnswer(answer) {
     });
 }
 
-const API = { logIn, logOut, getAdminInfo, getSurveys, addSurvey, getAnswers, addAnswer };
+function deleteSurvey(surveyId) {
+  return new Promise((resolve, reject) => {
+    fetch('/api/surveys/' + surveyId, {
+      method: 'DELETE',
+    }).then((response) => {
+      if (response.ok) {
+        resolve(null);
+      } else {
+        // analyze the cause of error
+        response.json()
+          .then((obj) => { reject(obj); }) // error msg in the response body
+          .catch((err) => { reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+      }
+    }).catch((err) => { reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+  });
+}
+
+const API = { logIn, logOut, getAdminInfo, getSurveys, addSurvey, getAnswers, addAnswer, deleteSurvey };
 export default API;

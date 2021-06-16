@@ -38,8 +38,7 @@ function SurveyView(props){
         return <Redirect to="/"/>
     }
 
-    const handleCancel = (event) => {
-        event.preventDefault();
+    const handleCancel = () => {
         props.requestUpdate();
         history.push("/");
     };
@@ -77,7 +76,7 @@ function SurveyView(props){
             <div className="justify-content-center text-center mb-4">
                 {surveyContent}
             </div>
-            <Button variant="secondary" className="mx-1" onClick={(event) => handleCancel(event)} type="cancel">Home</Button>
+            <Button variant="secondary" className="mx-1" onClick={() => handleCancel()} >Home</Button>
         </div>
 }
 

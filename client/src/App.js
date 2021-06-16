@@ -20,11 +20,11 @@ function App() {
   const [authError, setAutherror] = useState('');
 
   const [loading, setLoading] = useState(true);
-  const [needTasksUpdate, setNeedTasksUpdate] = useState(true);
+  const [needSurveysUpdate, setNeedSurveysUpdate] = useState(true);
 
   const requestUpdate = () => {
     setLoading(true);
-    setNeedTasksUpdate(true);
+    setNeedSurveysUpdate(true);
   }
 
   useEffect(()=> {
@@ -33,7 +33,7 @@ function App() {
         const user = await API.getAdminInfo();
         setAdminName(user.name);
         setLoggedIn(true);
-        setNeedTasksUpdate(true);
+        setNeedSurveysUpdate(true);
       } catch(err) {
         console.warn(err.error);
       }
@@ -49,15 +49,15 @@ function App() {
       } catch (err) {
         s = [];
       }
-      setNeedTasksUpdate(false);
+      setNeedSurveysUpdate(false);
       setSurveys(s);
     }
 
-    if(needTasksUpdate){
+    if(needSurveysUpdate){
       setLoading(true);
-      getSurveyList().then( () => setTimeout(() => setLoading(false), 1000));
+      getSurveyList().then( () => setTimeout(() => setLoading(false), 500));
     }
-  }, [needTasksUpdate]);
+  }, [needSurveysUpdate]);
 
 
   const doLogIn = async (credentials) => {
@@ -109,7 +109,7 @@ function App() {
               }
       />
       <Route exact path="/" render={() =>
-                <SurveyList loggedIn={loggedIn} surveys={surveys} setSurveys={setSurveys} username={adminName}/>
+                <SurveyList requestUpdate={requestUpdate} loggedIn={loggedIn} surveys={surveys} setSurveys={setSurveys} username={adminName}/>
               }
       />
       <Redirect to="/" />
