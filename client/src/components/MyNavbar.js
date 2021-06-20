@@ -7,8 +7,8 @@ function MyNavbar(props) {
     return (
         <Navbar bg="dark" variant="dark" expand="sm" className="justify-content-between px-2">
             <Navbar.Brand as={Link} style={{color: "#ffc107"}} onClick={() => props.requestUpdate()} to="/">
-                {iconBrand}{' '}
-                SurveyMaster 5000
+                {iconBrand}
+                <strong><i>SurveyMaster 5000</i></strong>
             </Navbar.Brand>
             {props.loggedIn ?
             <Button style={{color: "#ffc107"}} onClick={() => props.doLogOut()} variant="secondary">{iconLogOut}{" Log Out"}</Button>

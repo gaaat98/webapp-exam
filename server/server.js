@@ -178,97 +178,106 @@ app.get('/api/surveys/:id/answers', [
 });
 
 const validateQuestions = (req, res, next) => {
-  const questions = JSON.parse(req.body.questions);
+  let questions;
+  try{
+    questions = JSON.parse(req.body.questions);
+  }catch(err){
+    return res.status(422).json({ error: `Unable to parse questions.`});
+  }
 
-  if(questions.length === 0)
+  try{
+    if(questions.length === 0)
       return res.status(422).json({ error: `Survey must contain at least one question.`});
 
-  let invalid = 0;
-  for(let i = 0; i < questions.length; i++){
-    const q = questions[i];
+    let invalid = 0;
+    for(let i = 0; i < questions.length; i++){
+      const q = questions[i];
 
-    if(q === undefined){
-      console.log("q undef");
-      invalid++;
-      continue;
-    }
-
-    if(q.question === undefined || q.type === undefined || q.min === undefined || q.max === undefined || q.nAnswers === undefined || q.answers === undefined){
-      console.log("props undef");
-      invalid++;
-      continue;
-    }
-
-    if(q.min < 0 || q.max < 1 || q.nAnswers < 1){
-      console.log("ranges too small");
-      invalid++;
-      continue;
-    }
-
-    if(q.min > q.max || q.max > q.nAnswers || q.nAnswers > 10){
-      console.log("ranges too big");
-      invalid++;
-      continue;
-    }
-
-    if(q.type.trim().length === 0){
-      console.log("type too short");
-      invalid++;
-      continue;
-    }
-
-    switch(q.type){
-      case "open":
-        if(q.question.trim().length === 0){
-          console.log("q too short");
-          invalid++;
-          continue
-        }
-
-        if(q.max !== q.nAnswers && q.nAnswers !== 1){
-          console.log("open must have max = nans");
-          invalid++;
-          continue
-        }
-
-        break;
-
-      case "close":
-        if(q.answers.length < q.min || q.answers.length > q.nAnswers){
-          console.log("close must have ranges correct");
-          invalid++;
-          continue;
-        }
-
-        if(q.answers.length != q.nAnswers){
-          console.log("open must have max = nans");
-          invalid++;
-          continue;
-        }
-
-        if(!q.answers.every((opt) => opt.trim().length > 0)){
-          console.log("opts too short");
-          invalid++;
-          continue;
-        }
-
-        if(!q.answers.every((opt) => q.answers.indexOf(opt) === q.answers.lastIndexOf(opt))){
-          console.log("opts duplicate");
-          invalid++;
-          continue;
-        }
-        break;
-      
-      default:
+      if(q === undefined){
+        //console.log("q undef");
         invalid++;
-        break;
+        continue;
+      }
+
+      if(q.question === undefined || q.type === undefined || q.min === undefined || q.max === undefined || q.nAnswers === undefined || q.answers === undefined){
+        //console.log("props undef");
+        invalid++;
+        continue;
+      }
+
+      if(q.min < 0 || q.max < 1 || q.nAnswers < 1){
+        //console.log("ranges too small");
+        invalid++;
+        continue;
+      }
+
+      if(q.min > q.max || q.max > q.nAnswers || q.nAnswers > 10){
+        //console.log("ranges too big");
+        invalid++;
+        continue;
+      }
+
+      if(q.type.trim().length === 0){
+        //console.log("type too short");
+        invalid++;
+        continue;
+      }
+
+      switch(q.type){
+        case "open":
+          if(q.question.trim().length === 0){
+          // console.log("q too short");
+            invalid++;
+            continue
+          }
+
+          if(q.max !== q.nAnswers && q.nAnswers !== 1){
+            //console.log("open must have max = nans");
+            invalid++;
+            continue
+          }
+
+          break;
+
+        case "close":
+          if(q.answers.length < q.min || q.answers.length > q.nAnswers){
+            //console.log("close must have ranges correct");
+            invalid++;
+            continue;
+          }
+
+          if(q.answers.length != q.nAnswers){
+            //console.log("open must have max = nans");
+            invalid++;
+            continue;
+          }
+
+          if(!q.answers.every((opt) => opt.trim().length > 0)){
+            //console.log("opts too short");
+            invalid++;
+            continue;
+          }
+
+          if(!q.answers.every((opt) => q.answers.indexOf(opt) === q.answers.lastIndexOf(opt))){
+            //console.log("opts duplicate");
+            invalid++;
+            continue;
+          }
+          break;
+        
+        default:
+          invalid++;
+          break;
+      }
     }
-  }
 
-  if(invalid > 0){
-    return res.status(422).json({ error: `Found ${invalid} invalid answers.`});
-  }
+    if(invalid > 0){
+      return res.status(422).json({ error: `Found ${invalid} invalid questions.`});
+    }
 
+  }catch(err){
+    return res.status(422).json({ error: `Wrong format.`});
+  }
 
   return next();
 }
@@ -276,7 +285,7 @@ const validateQuestions = (req, res, next) => {
 
 app.post('/api/surveys', [
   body('title', 'Title must not be empty/whitespaces only.').not().isEmpty({ ignore_whitespace:true }),
-  body('questions', 'Questions must be provided.').not().isEmpty({ ignore_whitespace:true }),
+  body('questions', 'Questions must be provided.').not().isEmpty({ ignore_whitespace:true }).isJSON(),
 ], [isLoggedIn, validateQuestions], async (req, res) => {
   try {
       // input sanitization
@@ -304,66 +313,74 @@ const validateAnswer = async (req, res, next) => {
     return res.status(404).json({ error: `Survey ${req.body.surveyId} not found.`});
 
   const questions = survey.questions;
-  const answers = JSON.parse(req.body.answers);
-
-  let invalid = 0;
-  for(let i = 0; i < questions.length; i++){
-    const q = questions[i];
-    const a = answers[i];
-
-    if(a === undefined){
-      invalid++;
-      continue;
-    }
-
-    switch(q.type){
-      case "open":
-        if(a.length === 0 && q.min < 1){
-          continue;
-        }else if (a.length === 0){
-          invalid++;
-          continue;
-        }
-
-        if(a[0] === "" && q.min > 0){
-          invalid++;
-          continue;
-        }
-
-        if(a[0].length > 200){
-          invalid++;
-          continue;
-        }
-        break;
-
-      case "close":
-        if(a.length < q.min || a.length > q.max){
-          invalid++;
-          continue;
-        }
-
-        if(!a.every((opt) => q.answers.includes(opt))){
-          invalid++;
-          continue;
-        }
-        break;
-      
-      default:
-        break;
-    }
+  let answers;
+  try{
+    answers = JSON.parse(req.body.answers);
+  }catch(err){
+    return res.status(422).json({ error: `Unable to parse answers.`});
   }
 
-  if(invalid > 0){
-    return res.status(422).json({ error: `Found ${invalid} invalid answers.`});
+  try{
+    let invalid = 0;
+    for(let i = 0; i < questions.length; i++){
+      const q = questions[i];
+      const a = answers[i];
+  
+      if(a === undefined){
+        invalid++;
+        continue;
+      }
+  
+      switch(q.type){
+        case "open":
+          if(a.length === 0 && q.min < 1){
+            continue;
+          }else if (a.length === 0){
+            invalid++;
+            continue;
+          }
+  
+          if(a[0] === "" && q.min > 0){
+            invalid++;
+            continue;
+          }
+  
+          if(a[0].length > 200){
+            invalid++;
+            continue;
+          }
+          break;
+  
+        case "close":
+          if(a.length < q.min || a.length > q.max){
+            invalid++;
+            continue;
+          }
+  
+          if(!a.every((opt) => q.answers.includes(opt))){
+            invalid++;
+            continue;
+          }
+          break;
+        
+        default:
+          break;
+      }
+    }
+  
+    if(invalid > 0){
+      return res.status(422).json({ error: `Found ${invalid} invalid answers.`});
+    }
+  }catch(err){
+    return res.status(422).json({ error: `Wrong format.`});
   }
-
 
   return next();
 }
 
 app.post('/api/answers', [
   body('userName', 'Username must not be empty/whitespaces only.').not().isEmpty({ ignore_whitespace:true }),
-  body('answers', 'Answers must be provided.').not().isEmpty({ ignore_whitespace:true }),
+  body('answers', 'Answers must be provided.').not().isEmpty({ ignore_whitespace:true }).isJSON(),
   body('surveyId', 'SurveyId must be a positive integer.').isInt({min: 0}),
 ], validateAnswer, async (req, res) => {
     try {
@@ -405,7 +422,7 @@ app.delete('/api/surveys/:id', [
       else
           res.status(404).json({ err: `User ${req.user.id} has no survey with id: ${req.params.id}.`});
   } catch (err) {
-      console.log(err);
+      //console.log(err);
       res.status(500).json({err: err});
   }
 });
