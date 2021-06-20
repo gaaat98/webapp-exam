@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-d
 import { Toast } from "react-bootstrap";
 import './App.css';
 
-import MyNavbar from './components/Navbar.js';
+import MyNavbar from './components/MyNavbar.js';
 import SurveyList from './components/SurveyList.js';
 import SurveyAdd from './components/SurveyAdd.js';
 import SurveyFill from './components/SurveyFill.js';
@@ -93,7 +93,7 @@ function App() {
        :
       <Switch>
       <Route exact path="/add" render={() =>
-                {return loggedIn ? <SurveyAdd requestUpdate={requestUpdate} /> : <Redirect to="/" />}
+                {return loggedIn ? <SurveyAdd requestUpdate={requestUpdate} /> : <Redirect to="/login" />}
               }
       />
       <Route exact path="/view" render={() =>

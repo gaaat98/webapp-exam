@@ -70,7 +70,7 @@ function SurveyActions(props) {
                 {
                     props.survey.nAnswers > 0 ?
         
-                    <Button as={Link} variant="warning" className="col-sm-3" to={{
+                    <Button as={Link} variant="warning" className="col-sm-5" to={{
                         pathname: "/view",
                         state: { survey: props.survey } //a differenza di /add questa setta uno stato
                       }}>{iconEye}{` View ${props.survey.nAnswers} Answer${props.survey.nAnswers > 1 ? 's' : ''}`}</Button>

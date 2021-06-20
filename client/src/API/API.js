@@ -1,5 +1,3 @@
-const BASEURL = '/api';
-
 async function logIn(credentials) {
     let response = await fetch('/api/sessions', {
         method: 'POST',
@@ -29,7 +27,7 @@ async function logOut() {
 }
 
 async function getAdminInfo() {
-    const response = await fetch(BASEURL + '/sessions/current');
+    const response = await fetch('/api/sessions/current');
     const userInfo = await response.json();
     if (response.ok) {
         return userInfo;

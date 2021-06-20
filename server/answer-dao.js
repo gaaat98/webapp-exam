@@ -3,15 +3,18 @@
 
 const db = require('./db');
 
-exports.getAnswers = (surveyId) => {
+exports.getAnswers = (adminId, surveyId) => {
     return new Promise((resolve, reject) => {
-        const sql = 'SELECT * FROM answers WHERE surveyId=?';
-        const params = [surveyId];
+        const sql = 'SELECT * FROM answers, surveys WHERE surveyId=surveys.id AND admin=? AND surveyId=?';
+        const params = [adminId, surveyId];
 
         db.all(sql, params, (err, rows) => {
             if (err) {
                 reject(err);
                 return;
+            }
+            if(rows.length === 0){
+                reject("You're not authorized to see those answers/survey does not exist/has no answers.");
             }
             const answers = rows.map( (e) => {
                 const answers = JSON.parse(e.answers);

@@ -75,10 +75,16 @@ retrieve:
     GET /api/surveys
     GET /api/surveys/:id/
     GET /api/surveys/:id/answers
+    GET /api/sessions/current
 
 create:
     POST /api/surveys
     POST /api/answers
+    POST /api/sessions
+
+delete:
+    DELETE /sessions/current
+    DELETE /api/surveys/:id
 */
 
 // POST /sessions 
@@ -138,7 +144,7 @@ app.get('/api/surveys',
 
 // non necessario, ma lasciato per consistenza
 app.get('/api/surveys/:id', [
-    check('id', 'id must be an integer').isInt()
+    check('id', 'id must be a positive integer').isInt({min: 0})
 ], async (req, res) => {
     try {
         // input sanitization
@@ -155,8 +161,8 @@ app.get('/api/surveys/:id', [
 });
 
 app.get('/api/surveys/:id/answers', [
-    check('id', 'id must be an integer').isInt()
-], async (req, res) => {
+    check('id', 'id must be a positive integer').isInt({min: 0})
+], isLoggedIn, async (req, res) => {
     try {
         // input sanitization
         const errors = validationResult(req);
@@ -164,7 +170,7 @@ app.get('/api/surveys/:id/answers', [
             return res.status(422).json({ errors: errors.array() })
         }
 
-        const answers = await answerDao.getAnswers(req.params.id);
+        const answers = await answerDao.getAnswers(req.user.id, req.params.id);
         res.status(200).json(answers);
     } catch (err) {
         res.status(500).json({ error: err });
@@ -358,7 +364,7 @@ const validateAnswer = async (req, res, next) => {
 app.post('/api/answers', [
   body('userName', 'Username must not be empty/whitespaces only.').not().isEmpty({ ignore_whitespace:true }),
   body('answers', 'Answers must be provided.').not().isEmpty({ ignore_whitespace:true }),
-  body('surveyId', 'SurveyId must be an integer.').isInt(),
+  body('surveyId', 'SurveyId must be a positive integer.').isInt({min: 0}),
 ], validateAnswer, async (req, res) => {
     try {
         // input sanitization
@@ -383,7 +389,7 @@ app.post('/api/answers', [
 
 // non richiesta ma comoda per il debug
 app.delete('/api/surveys/:id', [
-  check('id', 'id must be an integer').isInt()
+  check('id', 'id must be a positive integer').isInt({min: 0})
 ], isLoggedIn, async (req, res) => {
   try {
       // input sanitization
@@ -393,7 +399,7 @@ app.delete('/api/surveys/:id', [
       }
 
       const surveyDeleted = await surveyDao.deleteSurvey(req.params.id, req.user.id);
-      console.log("got surveydeleted", surveyDeleted);
+      //console.log("got surveydeleted", surveyDeleted);
       if (surveyDeleted)
           res.status(200).json({ msg: `Deleted survey with id: ${req.params.id}.` });
       else
