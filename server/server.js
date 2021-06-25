@@ -61,7 +61,8 @@ const isLoggedIn = (req, res, next) => {
     // by default, Passport uses a MemoryStore to keep track of the sessions
     secret: 'a secret sentence not to share with anybody and anywhere, used to sign the session ID cookie',
     resave: false,
-    saveUninitialized: false 
+    saveUninitialized: false,
+    cookie: {sameSite: 'lax'} // sameSite none should only be used with attribute secure (so over HTTPS)
   }));
   
   // then, init passport
