@@ -46,17 +46,19 @@ function SurveyFill(props){
                 continue;
             }
 
-            if(q.type === "open" && answers[i][0] && answers[i][0].length > 200){
+            if(q.type === "open" && answers[i][0] !== undefined && answers[i][0].length > 200){
                 // non dovrebbe mai succedere perchè è gestito dal component
                 invalid++;
                 tempErr[i] = `Max 200 characters for text answer. You wrote ${answers[i][0].length}`;
                 continue;
             }
 
-            if(q.type === "open" && answers[i][0] && answers[i][0].trim().length === 0){
-                // non dovrebbe mai succedere perchè è gestito dal component
+            if(q.type === "open" && answers[i][0] !== undefined && answers[i][0].trim().length === 0){
                 invalid++;
-                tempErr[i] = `Whitespaces only open answer is not valid.`;
+                if(answers[i][0] === "")
+                    tempErr[i] = 'This question is mandatory.';
+                else
+                    tempErr[i] = `Whitespaces only open answer is not valid.`;
                 continue;
             }
         }
