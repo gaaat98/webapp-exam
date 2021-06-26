@@ -59,11 +59,6 @@ function SurveyAdd(props) {
         event.preventDefault();
         setMainError('');
 
-        if(title.trim().length === 0){
-            setMainError("Survey title cannot be empty!");
-            return;
-        }
-
         if(questions.length === 0){
             setMainError("You must add at least one question!");
             return;
@@ -94,6 +89,11 @@ function SurveyAdd(props) {
             const err = invalid > 1 ? `Please check your questions, there are ${invalid} issues.` : `Please check your questions, there is an issue.`;
             setMainError(err);
             setQuestions([...newQs]);
+            return;
+        }
+
+        if(title.trim().length === 0){
+            setMainError("Survey title cannot be empty!");
             return;
         }
 

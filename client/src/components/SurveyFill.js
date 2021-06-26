@@ -23,12 +23,6 @@ function SurveyFill(props){
         event.preventDefault();
         setMainError('');
 
-        // empty string or whitespaces only
-        if(name.trim().length === 0){
-            setMainError("Your name cannot be empty!");
-            return;
-        }
-
         let invalid = 0;
         const tempErr = [...questionErrors];
         for(let i = 0; i < survey.questions.length; i++){
@@ -71,6 +65,12 @@ function SurveyFill(props){
             const err = invalid > 1 ? `Please check your answers, there are ${invalid} issues.` : `Please check your answer, there is an issue.`;
             setMainError(err);
             setQuestionErrors([...tempErr]);
+            return;
+        }
+
+        // empty string or whitespaces only
+        if(name.trim().length === 0){
+            setMainError("Your name cannot be empty!");
             return;
         }
 
