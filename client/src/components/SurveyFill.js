@@ -86,7 +86,7 @@ function SurveyFill(props){
     const addAnswer = async(answer) => {
         API.addAnswer(answer)
         .then(() =>  {props.requestUpdate(); history.push("/");})
-        .catch((err) => setMainError("Error contacting the server.") );
+        .catch(() => setMainError("Error contacting the server.") );
     }
 
     const handleCancel = () => {

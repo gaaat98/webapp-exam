@@ -12,7 +12,7 @@ function SurveyList(props) {
   const deleteSurvey = async(surveyId) => {
     API.deleteSurvey(surveyId)
     .then(() =>  props.requestUpdate() )
-    .catch((err) => setMainError("Error contacting the server.") );
+    .catch(() => setMainError("Error contacting the server.") );
   }
 
   return (
