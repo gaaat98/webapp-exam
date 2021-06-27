@@ -48,7 +48,11 @@ function QuestionBuilder(props) {
                             const t = parseInt(ev.target.value) ? parseInt(ev.target.value) : 1;
                             let v = t < props.q.nAnswers ? t : props.q.nAnswers;
                             v = v < 1 ? 1 : v;
-                            props.editQuestions(props.index, { ...props.q, max: v });
+                            if(v < props.q.min){
+                                props.editQuestions(props.index, { ...props.q, min:v, max: v });
+                            }else{
+                                props.editQuestions(props.index, { ...props.q, max: v });
+                            }
                         }} />
                     </Form.Group>
                 </>

@@ -175,6 +175,9 @@ END
 
 ## Screenshots
 
+![Survey add](./img/add-survey.png)
+*Page to create a survey, multiple questions can be added and type, as well as constraints can be specified, error messages will appear when submitting invalid questions*
+
 ![Homepage when not authenticated](./img/home-unauth.png)
 *Homepage when a user is not authenticated. It lists all the available surveys and shows buttons to fill them.*
 
@@ -183,9 +186,6 @@ END
 
 ![View answers](./img/view-survey.png)
 *Answers to a certain survey are listed, showing a view for each user, is it possible to switch user both with the dropdown menu or the arrow buttons.*
-
-![Survey add](./img/add-survey.png)
-*Page to create a survey, multiple questions can be added and type, as well as constraints can be specified, error messages will appear when submitting invalid questions*
 
 ![Fill survey](./img/fill-survey-with-error.png)
 *When the user is not authenticated this view is shown after selecting a survey to fill in. If the users tries to submit invalid answers error messages are shown, indicatind which answer is not valid and why.*
