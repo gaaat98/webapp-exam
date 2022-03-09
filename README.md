@@ -1,5 +1,5 @@
 # Exam #1: "Questionario"
-## Student: ***REMOVED*** ***REMOVED*** ***REMOVED*** 
+Small full stack survey website developed with React and Express.
 
 ## React Client Application Routes
 
@@ -54,7 +54,7 @@
   ```
   [
     {
-      "userName": "Non ***REMOVED***",
+      "userName": "Tizio",
       "answers": [
         [
           "*elenco di istituti scolastici*"
@@ -82,8 +82,8 @@
   ```
   {
     "id": 1,
-    "username": "***REMOVED***@polito.it",
-    "name": "***REMOVED***"
+    "username": "caio@email.com",
+    "name": "Caio"
   }
   ```
 
@@ -109,8 +109,8 @@
   ```
   {
     "id": 1,
-    "username": "***REMOVED***@polito.it",
-    "name": "***REMOVED***"
+    "username": "caio@email.com",
+    "name": "Caio"
   }
   ```
 
@@ -199,4 +199,3 @@ END
 ## Users Credentials
 
 - SurveyAdmin, login with email: admin@surveymaster.com password: password
-- ***REMOVED***, login with email: ***REMOVED***@polito.it password: passwordmoltosicura
